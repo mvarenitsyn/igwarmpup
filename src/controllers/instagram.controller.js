@@ -377,10 +377,10 @@ const likePuppeteerPost = async (req, res) => {
 
             const box = await likeButton.boundingBox();
             await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-            await page.mouse.down();
-            await page.mouse.up();
+            //await page.mouse.down();
+            //await page.mouse.up();
             await likeButton.click();
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            await new Promise(resolve => setTimeout(resolve, 5000));
 
             await browser.close();
 

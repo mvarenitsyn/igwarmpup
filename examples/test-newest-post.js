@@ -5,8 +5,8 @@ const FormData = require('form-data');
 
 // Configuration
 const config = {
-    apiEndpoint: 'http://localhost:3002/api/instagram/newest-post',
-    username: 'nike', // Try another popular account with many posts
+    apiEndpoint: 'https://web-production-456c.up.railway.app/api/instagram/newest-post',
+    username: 'iflowbot', // Try another popular account with many posts
     cookiePath: path.join(__dirname, '../igcookie.json'), // Path to your cookies file
     browserless: false,
     browserlessToken: '', // Your browserless token if using browserless

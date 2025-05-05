@@ -5,8 +5,8 @@ const FormData = require('form-data');
 
 // Configuration
 const config = {
-    apiEndpoint: 'http://localhost:3002/api/instagram/like-story',
-    username: 'vary.miami', // Target username from target.txt
+    apiEndpoint: 'https://web-production-456c.up.railway.app/api/instagram/like-story',
+    username: 'iflowbot', // Target username from target.txt
     cookiePath: path.join(__dirname, '../igcookie.json'), // Path to your cookies file
     browserless: true,
     browserlessToken: 'S8yf0Lo56GNr1m2a9c480cc39f66c2f90362fe9d01', // Your browserless token if using browserless

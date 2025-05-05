@@ -17,13 +17,14 @@ const FormData = require('form-data');
 const path = require('path');
 
 // Configuration
+
 const API_URL = 'http://localhost:3002/api/instagram';
 const COOKIE_PATH = path.resolve('./igcookie.json'); // Path to your Instagram cookie file
-const POST_URL = 'https://www.instagram.com/p/DJMdcz_tu52/'; // Replace with actual post URL
+const POST_URL = 'https://www.instagram.com/p/DJPwqFuM0iQ/'; // Replace with actual post URL
 const USERNAME = 'iflowbot'; // Replace with the username of the post owner
-const COMMENT_TEXT = 'Great post! 🔥';
+const COMMENT_TEXT = 'WoW! Great post! 🔥';
 const USE_BROWSERLESS = false; // Set to true to use browserless.com
-const BROWSERLESS_TOKEN = ''; // Your browserless.com API token
+const BROWSERLESS_TOKEN = 'S8yf0Lo56GNr1m2a9c480cc39f66c2f90362fe9d01'; // Your browserless.com API token
 
 // Ensure cookie file exists
 if (!fs.existsSync(COOKIE_PATH)) {
@@ -45,7 +46,7 @@ async function likePost() {
 
         // Add browserless configuration if enabled
         if (USE_BROWSERLESS) {
-            formData.append('browserless', 'true');
+            formData.append('browserless', 'false');
             formData.append('browserlessToken', BROWSERLESS_TOKEN);
         } else {
             formData.append('browserless', 'false');
