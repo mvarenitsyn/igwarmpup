@@ -10,13 +10,18 @@ const instagramRoutes = require('./routes/instagram.routes');
 
 // Initialize Express
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3002;
 
-// Create uploads directory if it doesn't exist
+// Create necessary directories
 const uploadsDir = path.join(__dirname, '../uploads');
-if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-}
+const logsDir = path.join(__dirname, '../logs');
+
+// Ensure directories exist
+[uploadsDir, logsDir].forEach(dir => {
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+    }
+});
 
 // Middleware
 app.use(cors());
@@ -32,10 +37,14 @@ app.use('/api/instagram', instagramRoutes);
 app.get('/', (req, res) => {
     res.json({
         message: 'Welcome to Instagram Automation API',
+        version: require('../package.json').version,
         endpoints: {
             likeStory: '/api/instagram/like-story',
-            newestPost: '/api/instagram/newest-post'
-        }
+            newestPost: '/api/instagram/newest-post',
+            likePost: '/api/instagram/like-post',
+            postComment: '/api/instagram/post-comment'
+        },
+        documentation: 'See README.md for detailed usage information'
     });
 });
 
