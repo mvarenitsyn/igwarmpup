@@ -3,9 +3,6 @@
     "version": "1.0.0",
     "description": "Instagram automation REST API for story interactions",
     "main": "src/index.js",
-    "engines": {
-        "node": ">=14.0.0"
-    },
     "scripts": {
         "start": "node src/index.js",
         "dev": "nodemon src/index.js",
