@@ -203,7 +203,7 @@ const fetchUserNewestPost = async (req, res) => {
                 browserless: {
                     enabled: browserlessEnabled,
                     endpoint: browserlessToken ?
-                        `wss://chrome.browserless.io?token=${browserlessToken}` :
+                        `wss://chrome.browserless.io?token=${browserlessToken}&proxy=residential&proxyCountry=us&proxySticky=true` :
                         undefined,
                     options: {
                         args: ['--no-sandbox', '--disable-setuid-sandbox'],
