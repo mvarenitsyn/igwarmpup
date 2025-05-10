@@ -62,8 +62,16 @@ const initInstagramSession = async (options) => {
         // Launch browser (either local or browserless.com)
         if (browserless.enabled && browserless.endpoint) {
             console.log('Connecting to browserless.com...');
+            // Add proxy parameters to the browserless endpoint
+            let browserlessEndpoint = browserless.endpoint;
+            if (!browserlessEndpoint.includes('proxy=')) {
+                const separator = browserlessEndpoint.includes('?') ? '&' : '?';
+                browserlessEndpoint += `${separator}proxy=residential&proxyCountry=us&proxySticky=true`;
+            }
+            console.log(`Using endpoint with proxy: ${browserlessEndpoint}`);
+
             browser = await puppeteer.connect({
-                browserWSEndpoint: browserless.endpoint,
+                browserWSEndpoint: browserlessEndpoint,
                 defaultViewport: null,
                 ...(browserless.options || {})
             });

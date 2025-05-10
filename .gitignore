@@ -83,3 +83,6 @@ tmp/
 # Package lock files for smaller repo size
 package-lock.json
 yarn.lock
+
+
+exaamples/

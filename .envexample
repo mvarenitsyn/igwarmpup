@@ -7,7 +7,7 @@ BROWSERLESS_ENABLED=false
 BROWSERLESS_API_TOKEN=your_browserless_token_here
 
 # Default headless mode setting (can be overridden via API)
-HEADLESS=true
+HEADLESS=false
 
 # Logging
 LOG_PATH=./logs/activity_log.txt
