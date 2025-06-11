@@ -4,6 +4,7 @@ const multer = require('multer');
 const puppeteer = require('puppeteer');
 const { likeStory } = require('../utils/instagram.utils');
 const { fetchNewestPostWithPrivateApi } = require('../utils/instagram.private.api');
+const queueService = require('../services/queue');
 const { log } = require('console');
 
 // Configure multer for file uploads
@@ -609,9 +610,217 @@ function getRandomDelay(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+// Configure multer for memory storage (for new endpoints)
+const uploadMemory = multer({ storage: multer.memoryStorage() });
+
+/**
+ * Get similar accounts for a username using job queue
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+const getSimilarAccounts = async (req, res) => {
+    try {
+        const { targetUsername } = req.body;
+
+        if (!targetUsername) {
+            return res.status(400).json({
+                error: 'Target username is required',
+                status: 'error',
+                code: 'MISSING_USERNAME'
+            });
+        }
+
+        if (!req.file) {
+            return res.status(400).json({
+                error: 'Cookie file is required',
+                status: 'error',
+                code: 'MISSING_COOKIE_FILE'
+            });
+        }
+
+        try {
+            const cookieData = req.file.buffer.toString('base64');
+
+            let browserlessOptions = null;
+            if (req.body.browserless) {
+                try {
+                    browserlessOptions = JSON.parse(req.body.browserless);
+                } catch (parseError) {
+                    console.error('Error parsing browserless options:', parseError);
+                    return res.status(400).json({
+                        error: 'Invalid browserless options format',
+                        status: 'error',
+                        code: 'INVALID_BROWSERLESS_OPTIONS'
+                    });
+                }
+            }
+
+            let browserOptions = {};
+            if (req.body.browserOptions) {
+                try {
+                    browserOptions = JSON.parse(req.body.browserOptions);
+                } catch (parseError) {
+                    console.error('Error parsing browser options:', parseError);
+                    return res.status(400).json({
+                        error: 'Invalid browser options format',
+                        status: 'error',
+                        code: 'INVALID_BROWSER_OPTIONS'
+                    });
+                }
+            }
+
+            if (!browserOptions.timeouts) {
+                browserOptions.timeouts = {
+                    navigationTimeout: 60000,
+                    defaultTimeout: 30000
+                };
+            }
+
+            const options = {
+                browserless: browserlessOptions,
+                ...browserOptions
+            };
+
+            console.log('Controller passing options to queue service:', JSON.stringify(options, null, 2));
+
+            const jobId = await queueService.addSimilarAccountsJob(
+                targetUsername,
+                cookieData,
+                options
+            );
+
+            return res.status(202).json({
+                jobId,
+                status: 'queued',
+                code: 'JOB_QUEUED',
+                message: 'Job has been queued and will be processed soon',
+                estimatedTime: '30-60 seconds'
+            });
+        } catch (error) {
+            console.error('Error processing request data:', error);
+            return res.status(400).json({
+                error: 'Invalid request data: ' + error.message,
+                status: 'error',
+                code: 'INVALID_REQUEST_DATA'
+            });
+        }
+    } catch (error) {
+        console.error('Error queuing similar accounts job:', error);
+        return res.status(500).json({
+            error: error.message || 'Server error',
+            status: 'error',
+            code: 'SERVER_ERROR'
+        });
+    }
+};
+
+/**
+ * Follow a user using job queue
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+const followUser = async (req, res) => {
+    try {
+        const { targetUsername } = req.body;
+
+        if (!targetUsername) {
+            return res.status(400).json({
+                error: 'Target username is required',
+                status: 'error',
+                code: 'MISSING_USERNAME'
+            });
+        }
+
+        if (!req.file) {
+            return res.status(400).json({
+                error: 'Cookie file is required',
+                status: 'error',
+                code: 'MISSING_COOKIE_FILE'
+            });
+        }
+
+        try {
+            const cookieData = req.file.buffer.toString('base64');
+
+            let browserlessOptions = null;
+            if (req.body.browserless) {
+                try {
+                    browserlessOptions = JSON.parse(req.body.browserless);
+                } catch (parseError) {
+                    console.error('Error parsing browserless options:', parseError);
+                    return res.status(400).json({
+                        error: 'Invalid browserless options format',
+                        status: 'error',
+                        code: 'INVALID_BROWSERLESS_OPTIONS'
+                    });
+                }
+            }
+
+            let browserOptions = {};
+            if (req.body.browserOptions) {
+                try {
+                    browserOptions = JSON.parse(req.body.browserOptions);
+                } catch (parseError) {
+                    console.error('Error parsing browser options:', parseError);
+                    return res.status(400).json({
+                        error: 'Invalid browser options format',
+                        status: 'error',
+                        code: 'INVALID_BROWSER_OPTIONS'
+                    });
+                }
+            }
+
+            if (!browserOptions.timeouts) {
+                browserOptions.timeouts = {
+                    navigationTimeout: 60000,
+                    defaultTimeout: 30000
+                };
+            }
+
+            const options = {
+                browserless: browserlessOptions,
+                ...browserOptions
+            };
+
+            console.log('Controller passing options to queue service (follow job):', JSON.stringify(options, null, 2));
+
+            const jobId = await queueService.addFollowJob(
+                targetUsername,
+                cookieData,
+                options
+            );
+
+            return res.status(202).json({
+                jobId,
+                status: 'queued',
+                code: 'JOB_QUEUED',
+                message: 'Follow job has been queued and will be processed soon',
+                estimatedTime: '30-60 seconds'
+            });
+        } catch (error) {
+            console.error('Error processing request data:', error);
+            return res.status(400).json({
+                error: 'Invalid request data: ' + error.message,
+                status: 'error',
+                code: 'INVALID_REQUEST_DATA'
+            });
+        }
+    } catch (error) {
+        console.error('Error queuing follow job:', error);
+        return res.status(500).json({
+            error: error.message || 'Server error',
+            status: 'error',
+            code: 'SERVER_ERROR'
+        });
+    }
+};
+
 module.exports = {
     likeUserStory,
     fetchNewestPost: fetchUserNewestPost,
     likePuppeteerPost,
-    postComment
+    postComment,
+    getSimilarAccounts,
+    followUser,
+    uploadMemory
 };

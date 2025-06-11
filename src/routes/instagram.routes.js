@@ -54,4 +54,28 @@ router.post('/like-post', instagramController.likePuppeteerPost);
  */
 router.post('/post-comment', instagramController.postComment);
 
+/**
+ * @route POST /api/instagram/similar-accounts
+ * @desc Get similar accounts for a username using job queue
+ * @access Public
+ * @param {string} targetUsername - Instagram username to find similar accounts for
+ * @param {file} cookieFile - Instagram cookie.json file
+ * @param {string} [browserless] - JSON string with browserless configuration
+ * @param {string} [browserOptions] - JSON string with browser options
+ * @returns {Object} Response object with jobId and status
+ */
+router.post('/similar-accounts', instagramController.uploadMemory.single('cookieFile'), instagramController.getSimilarAccounts);
+
+/**
+ * @route POST /api/instagram/follow
+ * @desc Follow a user using job queue
+ * @access Public
+ * @param {string} targetUsername - Instagram username to follow
+ * @param {file} cookieFile - Instagram cookie.json file
+ * @param {string} [browserless] - JSON string with browserless configuration
+ * @param {string} [browserOptions] - JSON string with browser options
+ * @returns {Object} Response object with jobId and status
+ */
+router.post('/follow', instagramController.uploadMemory.single('cookieFile'), instagramController.followUser);
+
 module.exports = router;
