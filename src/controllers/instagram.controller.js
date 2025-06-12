@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
-const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-core');
 const { likeStory } = require('../utils/instagram.utils');
 const { fetchNewestPostWithPrivateApi } = require('../utils/instagram.private.api');
 const queueService = require('../services/queue');
@@ -324,24 +324,13 @@ const likePuppeteerPost = async (req, res) => {
                 } catch (browserlessError) {
                     console.error('Browserless.io connection failed:', browserlessError.message);
                     if (browserlessError.message.includes('429') || browserlessError.message.includes('rate limit')) {
-                        console.log('Rate limit detected, falling back to local browser');
+                        throw new Error('Browserless.io rate limit exceeded. Please try again later or upgrade your plan.');
                     } else {
-                        console.log('Connection error, falling back to local browser');
+                        throw new Error(`Browserless.io connection failed: ${browserlessError.message}`);
                     }
-                    
-                    // Fallback to local browser
-                    browser = await puppeteer.launch({
-                        headless: headless ? 'new' : false,
-                        args: ['--start-maximized']
-                    });
-                    console.log('Using local browser as fallback');
                 }
             } else {
-                console.log(`Using local browser for liking post: ${postUrl}`);
-                browser = await puppeteer.launch({
-                    headless: headless ? 'new' : false,
-                    args: ['--start-maximized']
-                });
+                throw new Error('Local browser mode disabled in production. Please configure browserless.io with valid credentials.');
             }
 
             const page = await browser.newPage();
@@ -553,24 +542,13 @@ const postComment = async (req, res) => {
                 } catch (browserlessError) {
                     console.error('Browserless.io connection failed:', browserlessError.message);
                     if (browserlessError.message.includes('429') || browserlessError.message.includes('rate limit')) {
-                        console.log('Rate limit detected, falling back to local browser');
+                        throw new Error('Browserless.io rate limit exceeded. Please try again later or upgrade your plan.');
                     } else {
-                        console.log('Connection error, falling back to local browser');
+                        throw new Error(`Browserless.io connection failed: ${browserlessError.message}`);
                     }
-                    
-                    // Fallback to local browser
-                    browser = await puppeteer.launch({
-                        headless: headless ? 'new' : false,
-                        args: ['--start-maximized']
-                    });
-                    console.log('Using local browser as fallback');
                 }
             } else {
-                console.log(`Using local browser for commenting on post: ${postUrl}`);
-                browser = await puppeteer.launch({
-                    headless: headless ? 'new' : false,
-                    args: ['--start-maximized']
-                });
+                throw new Error('Local browser mode disabled in production. Please configure browserless.io with valid credentials.');
             }
 
             const page = await browser.newPage();

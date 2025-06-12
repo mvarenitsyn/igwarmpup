@@ -1,4 +1,4 @@
-const { chromium } = require('playwright');
+const { chromium } = require('playwright-core');
 require('dotenv').config();
 
 class InstagramService {
@@ -36,26 +36,15 @@ class InstagramService {
                 console.error('Error connecting to browserless.io:', browserlessError.message);
                 
                 if (browserlessError.message.includes('429')) {
-                    console.log('Rate limit detected (429) - falling back to local browser');
+                    throw new Error('Browserless.io rate limit exceeded (429). Please try again later or upgrade your plan.');
                 } else if (browserlessError.message.includes('timeout')) {
-                    console.log('Connection timeout - falling back to local browser');
+                    throw new Error('Browserless.io connection timeout. Please check your connection and try again.');
                 } else {
-                    console.log('Connection error - falling back to local browser');
+                    throw new Error(`Browserless.io connection failed: ${browserlessError.message}`);
                 }
-
-                browser = await chromium.launch({
-                    headless: options.headless !== undefined ? options.headless : true,
-                    slowMo: options.debug ? 50 : 0
-                });
-                console.log('Successfully launched local browser as fallback');
             }
         } else {
-            console.log('Using local browser');
-            browser = await chromium.launch({
-                headless: options.headless !== undefined ? options.headless : true,
-                slowMo: options.debug ? 50 : 0
-            });
-            console.log('Successfully launched local browser instance');
+            throw new Error('Local browser mode disabled in production. Please configure browserless.io with valid credentials.');
         }
 
         const context = await browser.newContext({

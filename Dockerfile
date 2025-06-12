@@ -35,6 +35,7 @@ COPY package-lock.json* ./
 RUN npm install -g npm@latest && \
     PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 \
     PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=1 \
+    PUPPETEER_SKIP_DOWNLOAD=1 \
     npm ci --omit=dev --no-audit --no-fund
 
 # Copy application code

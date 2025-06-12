@@ -1,4 +1,4 @@
-const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-core');
 const fs = require('fs');
 const path = require('path');
 
@@ -66,12 +66,7 @@ const fetchNewestPostWithBrowser = async (options) => {
                 ...(browserless.options || {})
             });
         } else {
-            logActivity(logFilePath, username, 'Launching local browser');
-            browser = await puppeteer.launch({
-                headless: headless ? "new" : false,
-                defaultViewport: null,
-                args: ['--start-maximized']
-            });
+            throw new Error('Local browser mode disabled in production. Please configure browserless.io with valid credentials.');
         }
 
         page = await browser.newPage();

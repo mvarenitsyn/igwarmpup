@@ -1,4 +1,4 @@
-const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-core');
 const fs = require('fs');
 const path = require('path');
 
@@ -69,12 +69,7 @@ const initInstagramSession = async (options) => {
             });
             console.log('Connected to browserless.com');
         } else {
-            console.log('Launching local browser...');
-            browser = await puppeteer.launch({
-                headless: headless ? "new" : false,
-                defaultViewport: null, // Use default viewport of the browser
-                args: ['--start-maximized'], // Start with maximized browser window
-            });
+            throw new Error('Local browser mode disabled in production. Please configure browserless.io with valid credentials.');
         }
 
         const page = await browser.newPage();
