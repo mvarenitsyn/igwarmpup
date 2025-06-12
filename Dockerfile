@@ -13,8 +13,9 @@ ENV NODE_ENV=production
 COPY package.json ./
 COPY package-lock.json* ./
 
-# Install dependencies without downloading browsers
-RUN PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 \
+# Upgrade npm to latest and install dependencies without downloading browsers
+RUN npm install -g npm@latest && \
+    PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 \
     PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=1 \
     npm ci --omit=dev --no-audit --no-fund
 
