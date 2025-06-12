@@ -10,15 +10,11 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=1
 ENV NODE_ENV=production
 
 # Copy package files first (for better caching)
-COPY package.json package-lock.json ./
+COPY package.json ./
+COPY package-lock.json* ./
 
 # Install dependencies without downloading browsers
-# Use npm ci if lockfile exists, otherwise fallback to npm install
-RUN if [ -f package-lock.json ]; then \
-        npm ci --omit=dev --no-audit --no-fund; \
-    else \
-        npm install --production --no-audit --no-fund; \
-    fi
+RUN npm install --production --no-audit --no-fund
 
 # Copy application code
 COPY . .
