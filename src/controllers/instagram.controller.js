@@ -301,13 +301,15 @@ const likePuppeteerPost = async (req, res) => {
         // Determine if headless mode is enabled (default: true)
         const headless = req.body.headless !== 'false';
 
+        // Declare browser variable outside try block for proper cleanup
+        let browser;
+        
         try {
             // Read cookies from the uploaded file
             const cookiesContent = fs.readFileSync(req.file.path, 'utf8');
             const cookies = JSON.parse(cookiesContent);
 
             // Set up browser options
-            let browser;
             if (browserlessEnabled && browserlessToken) {
                 console.log(`Using browserless.com for liking post: ${postUrl}`);
                 const browserWSEndpoint = `wss://chrome.browserless.io?token=${browserlessToken}&proxyCountry=us&proxy=residential&proxySticky=true&stealth=true&headless=true`;
@@ -528,13 +530,15 @@ const postComment = async (req, res) => {
             }
         }
 
+        // Declare browser variable outside try block for proper cleanup
+        let browser;
+        
         try {
             // Read cookies from the uploaded file
             const cookiesContent = fs.readFileSync(req.file.path, 'utf8');
             const cookies = JSON.parse(cookiesContent);
 
             // Set up browser options
-            let browser;
             if (browserlessEnabled && browserlessToken) {
                 console.log(`Using browserless.com for commenting on post: ${postUrl}`);
                 const browserWSEndpoint = `wss://chrome.browserless.io?token=${browserlessToken}&proxyCountry=us&proxy=residential&proxySticky=true&stealth=true&headless=true`;
@@ -584,7 +588,38 @@ const postComment = async (req, res) => {
             console.log(`Attempting to post comment to: ${postUrl}`);
             console.log(`Comment text: ${comment}`);
 
-            await page.goto(postUrl, { waitUntil: 'networkidle2' });
+            // Try to navigate with retry logic for connection issues
+            let navigationAttempts = 0;
+            const maxAttempts = 3;
+            
+            while (navigationAttempts < maxAttempts) {
+                try {
+                    await page.goto(postUrl, { 
+                        waitUntil: 'networkidle2',
+                        timeout: 30000 
+                    });
+                    console.log('Successfully navigated to Instagram post');
+                    break;
+                } catch (navError) {
+                    navigationAttempts++;
+                    console.error(`Navigation attempt ${navigationAttempts} failed:`, navError.message);
+                    
+                    if (navError.message.includes('ERR_CONNECTION_CLOSED') || 
+                        navError.message.includes('net::') ||
+                        navError.message.includes('timeout')) {
+                        
+                        if (navigationAttempts < maxAttempts) {
+                            console.log(`Retrying navigation in 5 seconds... (${navigationAttempts}/${maxAttempts})`);
+                            await new Promise(resolve => setTimeout(resolve, 5000));
+                        } else {
+                            throw new Error(`Failed to navigate to Instagram after ${maxAttempts} attempts: ${navError.message}`);
+                        }
+                    } else {
+                        // Non-network error, don't retry
+                        throw navError;
+                    }
+                }
+            }
             await new Promise(res => setTimeout(res, getRandomDelay(2000, 5000)));
 
             // Add the comment
