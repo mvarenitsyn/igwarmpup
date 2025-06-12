@@ -80,6 +80,6 @@ debug-*.js
 temp/
 tmp/
 
-# Package lock files for smaller repo size
-package-lock.json
+# Package lock files for smaller repo size  
+# package-lock.json  # Commented out - needed for Docker builds
 yarn.lock
