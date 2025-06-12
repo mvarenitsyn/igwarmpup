@@ -14,8 +14,7 @@ COPY package.json ./
 COPY package-lock.json* ./
 
 # Install dependencies without downloading browsers
-RUN npm config set registry https://registry.npmmirror.com/ && \
-    PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 \
+RUN PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 \
     PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=1 \
     npm ci --omit=dev --no-audit --no-fund
 
