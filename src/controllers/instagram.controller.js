@@ -93,7 +93,7 @@ const likeUserStory = async (req, res) => {
                 browserless: {
                     enabled: browserlessEnabled,
                     endpoint: browserlessToken ?
-                        `wss://chrome.browserless.io?token=${browserlessToken}` :
+                        `wss://chrome.browserless.io?token=${browserlessToken}&proxyCountry=us&proxy=residential&proxySticky=true&stealth=true&headless=true` :
                         undefined,
                     options: {
                         args: ['--no-sandbox', '--disable-setuid-sandbox'],
@@ -204,7 +204,7 @@ const fetchUserNewestPost = async (req, res) => {
                 browserless: {
                     enabled: browserlessEnabled,
                     endpoint: browserlessToken ?
-                        `wss://chrome.browserless.io?token=${browserlessToken}&proxy=residential&proxyCountry=us&proxySticky=true` :
+                        `wss://chrome.browserless.io?token=${browserlessToken}&proxyCountry=us&proxy=residential&proxySticky=true&stealth=true&headless=true` :
                         undefined,
                     options: {
                         args: ['--no-sandbox', '--disable-setuid-sandbox'],
@@ -310,7 +310,7 @@ const likePuppeteerPost = async (req, res) => {
             let browser;
             if (browserlessEnabled && browserlessToken) {
                 console.log(`Using browserless.com for liking post: ${postUrl}`);
-                const browserWSEndpoint = `wss://chrome.browserless.io?token=${browserlessToken}`;
+                const browserWSEndpoint = `wss://chrome.browserless.io?token=${browserlessToken}&proxyCountry=us&proxy=residential&proxySticky=true&stealth=true&headless=true`;
                 const puppeteerOptions = {
                     browserWSEndpoint,
                     args: ['--no-sandbox', '--disable-setuid-sandbox']
@@ -509,7 +509,7 @@ const postComment = async (req, res) => {
             let browser;
             if (browserlessEnabled && browserlessToken) {
                 console.log(`Using browserless.com for commenting on post: ${postUrl}`);
-                const browserWSEndpoint = `wss://chrome.browserless.io?token=${browserlessToken}`;
+                const browserWSEndpoint = `wss://chrome.browserless.io?token=${browserlessToken}&proxyCountry=us&proxy=residential&proxySticky=true&stealth=true&headless=true`;
                 const puppeteerOptions = {
                     browserWSEndpoint,
                     args: ['--no-sandbox', '--disable-setuid-sandbox']
@@ -645,6 +645,16 @@ const getSimilarAccounts = async (req, res) => {
             if (req.body.browserless) {
                 try {
                     browserlessOptions = JSON.parse(req.body.browserless);
+                    // Add default proxy settings if browserless is enabled but queryParams not provided
+                    if (browserlessOptions.enabled && !browserlessOptions.queryParams) {
+                        browserlessOptions.queryParams = {
+                            proxyCountry: "us",
+                            proxy: "residential",
+                            proxySticky: true,
+                            stealth: true,
+                            headless: true
+                        };
+                    }
                 } catch (parseError) {
                     console.error('Error parsing browserless options:', parseError);
                     return res.status(400).json({
@@ -746,6 +756,16 @@ const followUser = async (req, res) => {
             if (req.body.browserless) {
                 try {
                     browserlessOptions = JSON.parse(req.body.browserless);
+                    // Add default proxy settings if browserless is enabled but queryParams not provided
+                    if (browserlessOptions.enabled && !browserlessOptions.queryParams) {
+                        browserlessOptions.queryParams = {
+                            proxyCountry: "us",
+                            proxy: "residential",
+                            proxySticky: true,
+                            stealth: true,
+                            headless: true
+                        };
+                    }
                 } catch (parseError) {
                     console.error('Error parsing browserless options:', parseError);
                     return res.status(400).json({
