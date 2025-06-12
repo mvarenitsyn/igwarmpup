@@ -14,7 +14,9 @@ COPY package.json ./
 COPY package-lock.json* ./
 
 # Install dependencies without downloading browsers
-RUN npm install --production --no-audit --no-fund
+RUN PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 \
+    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=1 \
+    npm install --production --no-audit --no-fund --force
 
 # Copy application code
 COPY . .
