@@ -1,0 +1,13 @@
+[phases.setup]
+nixPkgs = ['nodejs_22', 'npm-9_x']
+# Remove all browser/GUI packages since we use browserless.io
+
+[phases.install]
+cmd = 'PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install'
+
+[phases.start]
+cmd = 'node src/index.js'
+
+[variables]
+PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = '1'
+NODE_ENV = 'production'
