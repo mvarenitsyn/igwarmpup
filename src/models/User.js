@@ -24,6 +24,12 @@ const UserSchema = new mongoose.Schema({
         date: Date,
         message: String
     },
+    lastMessage: {
+        success: Boolean,
+        date: Date,
+        message: String,
+        content: String
+    },
     jobIds: {
         type: [String],
         default: []

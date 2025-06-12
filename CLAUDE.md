@@ -56,6 +56,7 @@ This is an Instagram automation REST API built with Express.js, Puppeteer, and P
 #### Asynchronous Processing (Playwright + Job Queue)
 - `POST /api/instagram/similar-accounts`: Queue job to find similar Instagram accounts
 - `POST /api/instagram/follow`: Queue job to follow a user
+- `POST /api/instagram/send-message`: Queue job to send direct message to a user
 - `GET /api/jobs/:jobId`: Get job status and results
 - `GET /api/jobs/user/:username`: Get all jobs for a specific username
 - `GET /api/users/:username`: Get stored user data including similar accounts

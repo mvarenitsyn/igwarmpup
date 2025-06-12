@@ -34,7 +34,14 @@ class InstagramService {
                 console.log('Successfully connected to browserless.io');
             } catch (browserlessError) {
                 console.error('Error connecting to browserless.io:', browserlessError.message);
-                console.log('Falling back to local browser...');
+                
+                if (browserlessError.message.includes('429')) {
+                    console.log('Rate limit detected (429) - falling back to local browser');
+                } else if (browserlessError.message.includes('timeout')) {
+                    console.log('Connection timeout - falling back to local browser');
+                } else {
+                    console.log('Connection error - falling back to local browser');
+                }
 
                 browser = await chromium.launch({
                     headless: options.headless !== undefined ? options.headless : true,
@@ -238,6 +245,171 @@ class InstagramService {
             return {
                 success: false,
                 message: `Failed to follow ${username}: ${error.message}`
+            };
+        } finally {
+            if (browser) {
+                await browser.close();
+            }
+        }
+    }
+
+    async sendMessage(username, message, cookieData, options = {}) {
+        let browser, page, context;
+        
+        try {
+            console.log(`Starting message send to: ${username}`);
+            const { browser: browserInstance, page: pageInstance, context: contextInstance, pageDelay } = await this.initBrowser(options, cookieData);
+            browser = browserInstance;
+            page = pageInstance;
+            context = contextInstance;
+
+            const userProfileUrl = `${this.baseUrl}/${username}/`;
+            console.log(`Navigating to user profile: ${userProfileUrl}`);
+            
+            await page.goto(userProfileUrl, { waitUntil: 'networkidle' });
+            await page.waitForTimeout(pageDelay);
+
+            // Multiple strategies to find message button
+            let messageButtonFound = false;
+            
+            // Strategy 1: Look for direct "Message" button
+            try {
+                const directMessageSelectors = [
+                    'div[role="button"]:has-text("Message")',
+                    'div[role="button"][tabindex="0"]:has-text("Message")',
+                    'button:has-text("Message")'
+                ];
+
+                for (const selector of directMessageSelectors) {
+                    const messageButton = await page.$(selector);
+                    if (messageButton) {
+                        const buttonText = await messageButton.textContent();
+                        if (buttonText && buttonText.includes('Message')) {
+                            await messageButton.click();
+                            console.log(`Clicked direct message button`);
+                            messageButtonFound = true;
+                            await page.waitForTimeout(3000);
+                            break;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.log('Direct message button strategy failed');
+            }
+
+            // Strategy 2: Look for Options button then "Send message"
+            if (!messageButtonFound) {
+                try {
+                    const optionsSelectors = [
+                        'svg[aria-label="Options"]',
+                        '[aria-label="Options"]',
+                        '[aria-label="More options"]'
+                    ];
+
+                    let optionsClicked = false;
+                    for (const selector of optionsSelectors) {
+                        const optionsButton = await page.$(selector);
+                        if (optionsButton) {
+                            await optionsButton.click();
+                            console.log(`Clicked options button`);
+                            optionsClicked = true;
+                            await page.waitForTimeout(3000);
+                            break;
+                        }
+                    }
+
+                    if (optionsClicked) {
+                        const sendMessageSelectors = [
+                            'button:has-text("Send message")',
+                            '[role="button"]:has-text("Send message")'
+                        ];
+
+                        for (const selector of sendMessageSelectors) {
+                            const sendMessageButton = await page.$(selector);
+                            if (sendMessageButton) {
+                                await sendMessageButton.click();
+                                console.log(`Clicked send message option`);
+                                messageButtonFound = true;
+                                await page.waitForTimeout(3000);
+                                break;
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.log('Options button strategy failed');
+                }
+            }
+
+            if (!messageButtonFound) {
+                throw new Error('Message button not found - user may have restricted messaging');
+            }
+
+            // Handle "Not Now" popup if it appears
+            try {
+                const notNowButton = await page.$('button:has-text("Not Now")');
+                if (notNowButton) {
+                    await notNowButton.click();
+                    console.log('Dismissed "Not Now" popup');
+                    await page.waitForTimeout(2000);
+                }
+            } catch (error) {
+                // No popup, continue
+            }
+
+            // Find and click text area for typing
+            const textAreaSelectors = [
+                'div[contenteditable="true"]',
+                'div[role="textbox"]',
+                '[contenteditable="true"]'
+            ];
+
+            let textAreaFound = false;
+            for (const selector of textAreaSelectors) {
+                try {
+                    const textArea = await page.$(selector);
+                    if (textArea) {
+                        await textArea.click();
+                        console.log(`Clicked text area`);
+                        textAreaFound = true;
+                        await page.waitForTimeout(1000);
+                        break;
+                    }
+                } catch (error) {
+                    continue;
+                }
+            }
+
+            if (!textAreaFound) {
+                throw new Error('Message text area not found');
+            }
+
+            // Type the message with support for line breaks
+            console.log('Typing message...');
+            const messageLines = message.split('\n');
+            for (let i = 0; i < messageLines.length; i++) {
+                await page.keyboard.type(messageLines[i]);
+                if (i < messageLines.length - 1) {
+                    await page.keyboard.down('Shift');
+                    await page.keyboard.press('Enter');
+                    await page.keyboard.up('Shift');
+                }
+            }
+
+            // Send the message
+            await page.keyboard.press('Enter');
+            console.log('Message sent');
+            await page.waitForTimeout(3000);
+
+            return {
+                success: true,
+                message: `Successfully sent message to ${username}`
+            };
+
+        } catch (error) {
+            console.error('Error in sendMessage:', error);
+            return {
+                success: false,
+                message: `Failed to send message to ${username}: ${error.message}`
             };
         } finally {
             if (browser) {

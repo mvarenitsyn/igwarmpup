@@ -315,7 +315,25 @@ const likePuppeteerPost = async (req, res) => {
                     browserWSEndpoint,
                     args: ['--no-sandbox', '--disable-setuid-sandbox']
                 };
-                browser = await puppeteer.connect(puppeteerOptions);
+                
+                try {
+                    browser = await puppeteer.connect(puppeteerOptions);
+                    console.log('Successfully connected to browserless.com');
+                } catch (browserlessError) {
+                    console.error('Browserless.io connection failed:', browserlessError.message);
+                    if (browserlessError.message.includes('429') || browserlessError.message.includes('rate limit')) {
+                        console.log('Rate limit detected, falling back to local browser');
+                    } else {
+                        console.log('Connection error, falling back to local browser');
+                    }
+                    
+                    // Fallback to local browser
+                    browser = await puppeteer.launch({
+                        headless: headless ? 'new' : false,
+                        args: ['--start-maximized']
+                    });
+                    console.log('Using local browser as fallback');
+                }
             } else {
                 console.log(`Using local browser for liking post: ${postUrl}`);
                 browser = await puppeteer.launch({
@@ -398,6 +416,16 @@ const likePuppeteerPost = async (req, res) => {
 
         } catch (error) {
             console.error('Error in likePuppeteerPost:', error);
+
+            // CRITICAL: Close browser on error to prevent leaks
+            if (browser) {
+                try {
+                    await browser.close();
+                    console.log('Browser closed after error');
+                } catch (closeError) {
+                    console.error('Error closing browser:', closeError);
+                }
+            }
 
             // Clean up the uploaded file on error
             if (req.file) {
@@ -514,7 +542,25 @@ const postComment = async (req, res) => {
                     browserWSEndpoint,
                     args: ['--no-sandbox', '--disable-setuid-sandbox']
                 };
-                browser = await puppeteer.connect(puppeteerOptions);
+                
+                try {
+                    browser = await puppeteer.connect(puppeteerOptions);
+                    console.log('Successfully connected to browserless.com');
+                } catch (browserlessError) {
+                    console.error('Browserless.io connection failed:', browserlessError.message);
+                    if (browserlessError.message.includes('429') || browserlessError.message.includes('rate limit')) {
+                        console.log('Rate limit detected, falling back to local browser');
+                    } else {
+                        console.log('Connection error, falling back to local browser');
+                    }
+                    
+                    // Fallback to local browser
+                    browser = await puppeteer.launch({
+                        headless: headless ? 'new' : false,
+                        args: ['--start-maximized']
+                    });
+                    console.log('Using local browser as fallback');
+                }
             } else {
                 console.log(`Using local browser for commenting on post: ${postUrl}`);
                 browser = await puppeteer.launch({
@@ -587,6 +633,16 @@ const postComment = async (req, res) => {
 
         } catch (error) {
             console.error('Error in postComment:', error);
+
+            // CRITICAL: Close browser on error to prevent leaks
+            if (browser) {
+                try {
+                    await browser.close();
+                    console.log('Browser closed after error');
+                } catch (closeError) {
+                    console.error('Error closing browser:', closeError);
+                }
+            }
 
             // Clean up the uploaded file on error
             if (req.file) {
@@ -725,6 +781,126 @@ const getSimilarAccounts = async (req, res) => {
 };
 
 /**
+ * Send message to a user using job queue
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+const sendMessage = async (req, res) => {
+    try {
+        const { targetUsername, message } = req.body;
+
+        if (!targetUsername) {
+            return res.status(400).json({
+                error: 'Target username is required',
+                status: 'error',
+                code: 'MISSING_USERNAME'
+            });
+        }
+
+        if (!message) {
+            return res.status(400).json({
+                error: 'Message content is required',
+                status: 'error',
+                code: 'MISSING_MESSAGE'
+            });
+        }
+
+        if (!req.file) {
+            return res.status(400).json({
+                error: 'Cookie file is required',
+                status: 'error',
+                code: 'MISSING_COOKIE_FILE'
+            });
+        }
+
+        try {
+            const cookieData = req.file.buffer.toString('base64');
+
+            let browserlessOptions = null;
+            if (req.body.browserless) {
+                try {
+                    browserlessOptions = JSON.parse(req.body.browserless);
+                    // Add default proxy settings if browserless is enabled but queryParams not provided
+                    if (browserlessOptions.enabled && !browserlessOptions.queryParams) {
+                        browserlessOptions.queryParams = {
+                            proxyCountry: "us",
+                            proxy: "residential",
+                            proxySticky: true,
+                            stealth: true,
+                            headless: true
+                        };
+                    }
+                } catch (parseError) {
+                    console.error('Error parsing browserless options:', parseError);
+                    return res.status(400).json({
+                        error: 'Invalid browserless options format',
+                        status: 'error',
+                        code: 'INVALID_BROWSERLESS_OPTIONS'
+                    });
+                }
+            }
+
+            let browserOptions = {};
+            if (req.body.browserOptions) {
+                try {
+                    browserOptions = JSON.parse(req.body.browserOptions);
+                } catch (parseError) {
+                    console.error('Error parsing browser options:', parseError);
+                    return res.status(400).json({
+                        error: 'Invalid browser options format',
+                        status: 'error',
+                        code: 'INVALID_BROWSER_OPTIONS'
+                    });
+                }
+            }
+
+            if (!browserOptions.timeouts) {
+                browserOptions.timeouts = {
+                    navigationTimeout: 60000,
+                    defaultTimeout: 30000
+                };
+            }
+
+            const options = {
+                browserless: browserlessOptions,
+                ...browserOptions
+            };
+
+            console.log('Controller passing options to queue service (send message job):', JSON.stringify(options, null, 2));
+
+            const jobId = await queueService.addSendMessageJob(
+                targetUsername,
+                message,
+                cookieData,
+                options
+            );
+
+            return res.status(202).json({
+                jobId,
+                status: 'queued',
+                code: 'JOB_QUEUED',
+                message: 'Send message job has been queued and will be processed soon',
+                estimatedTime: '30-60 seconds'
+            });
+        } catch (error) {
+            console.error('Error processing request data:', error);
+            return res.status(400).json({
+                error: 'Invalid request data: ' + error.message,
+                status: 'error',
+                code: 'INVALID_REQUEST_DATA'
+            });
+        }
+    } catch (error) {
+        console.error('Error queuing send message job:', error);
+        return res.status(500).json({
+            error: error.message || 'Server error',
+            status: 'error',
+            code: 'SERVER_ERROR'
+        });
+    }
+};
+
+/**
  * Follow a user using job queue
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
@@ -842,5 +1018,6 @@ module.exports = {
     postComment,
     getSimilarAccounts,
     followUser,
+    sendMessage,
     uploadMemory
 };

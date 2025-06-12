@@ -9,7 +9,7 @@ const JobSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['similar-accounts', 'follow'],
+        enum: ['similar-accounts', 'follow', 'send-message'],
         required: true
     },
     targetUsername: {
@@ -49,6 +49,10 @@ const JobSchema = new mongoose.Schema({
     cookieData: {
         type: String,
         select: false
+    },
+    messageContent: {
+        type: String,
+        default: null
     },
     created: {
         type: Date,

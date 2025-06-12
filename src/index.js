@@ -62,6 +62,7 @@ app.get('/', (req, res) => {
             // New endpoints
             similarAccounts: '/api/instagram/similar-accounts',
             followUser: '/api/instagram/follow',
+            sendMessage: '/api/instagram/send-message',
             jobStatus: '/api/jobs/:jobId',
             userJobs: '/api/jobs/user/:username',
             userData: '/api/users/:username'
