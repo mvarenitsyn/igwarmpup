@@ -1,7 +1,7 @@
 {
     "name": "igwarmpup",
     "version": "1.0.0",
-    "description": "Instagram automation REST API for story interactions",
+    "description": "Instagram automation REST API for story interactions and messaging",
     "main": "src/index.js",
     "engines": {
         "node": ">=14.0.0"
